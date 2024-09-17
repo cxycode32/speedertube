@@ -1,0 +1,32 @@
+# Ignore Python cache directories
+__pycache__/
+playlist_migrator/__pycache__/
+ui/__pycache__/
+
+# Ignore virtual environment
+venv/
+
+# Ignore cache files
+.cache/
+
+# Ignore json files
+token.json
+client_secrets.json
+client_secrets_temp.json
+
+# Ignore other specific files
+*.log
+*.tmp
+*.swp
+
+# Ignore compiled Python files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore environment configuration files
+.env
+
+# Ignore IDE-specific files (e.g., VSCode, PyCharm)
+.vscode/
+.idea/
