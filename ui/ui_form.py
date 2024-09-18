@@ -94,55 +94,60 @@ class Ui_SpeederTubeGUI(object):
 
         self.gridLayout.addWidget(self.pushButton, 10, 0, 1, 2)
 
+        self.pushButton_2 = QPushButton(self.gridLayoutWidget)
+        self.pushButton_2.setObjectName(u"pushButton_2")
+
+        self.gridLayout.addWidget(self.pushButton_2, 11, 0, 1, 2)
+
         self.line_3 = QFrame(self.gridLayoutWidget)
         self.line_3.setObjectName(u"line_3")
         self.line_3.setFrameShape(QFrame.Shape.HLine)
         self.line_3.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout.addWidget(self.line_3, 11, 0, 1, 2)
+        self.gridLayout.addWidget(self.line_3, 12, 0, 1, 2)
 
         self.label_4 = QLabel(self.gridLayoutWidget)
         self.label_4.setObjectName(u"label_4")
 
-        self.gridLayout.addWidget(self.label_4, 13, 0, 1, 1)
+        self.gridLayout.addWidget(self.label_4, 14, 0, 1, 1)
 
         self.label_5 = QLabel(self.gridLayoutWidget)
         self.label_5.setObjectName(u"label_5")
 
-        self.gridLayout.addWidget(self.label_5, 13, 1, 1, 1)
+        self.gridLayout.addWidget(self.label_5, 14, 1, 1, 1)
 
         self.listView = QListView(self.gridLayoutWidget)
         self.listView.setObjectName(u"listView")
 
-        self.gridLayout.addWidget(self.listView, 16, 0, 1, 1)
+        self.gridLayout.addWidget(self.listView, 17, 0, 1, 1)
 
         self.listView_2 = QListView(self.gridLayoutWidget)
         self.listView_2.setObjectName(u"listView_2")
 
-        self.gridLayout.addWidget(self.listView_2, 16, 1, 1, 1)
+        self.gridLayout.addWidget(self.listView_2, 17, 1, 1, 1)
 
         self.line_4 = QFrame(self.gridLayoutWidget)
         self.line_4.setObjectName(u"line_4")
         self.line_4.setFrameShape(QFrame.Shape.HLine)
         self.line_4.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout.addWidget(self.line_4, 17, 0, 1, 2)
+        self.gridLayout.addWidget(self.line_4, 18, 0, 1, 2)
 
         self.label_7 = QLabel(self.gridLayoutWidget)
         self.label_7.setObjectName(u"label_7")
 
-        self.gridLayout.addWidget(self.label_7, 18, 0, 1, 1)
+        self.gridLayout.addWidget(self.label_7, 19, 0, 1, 1)
 
         self.progressBar = QProgressBar(self.gridLayoutWidget)
         self.progressBar.setObjectName(u"progressBar")
         self.progressBar.setValue(24)
 
-        self.gridLayout.addWidget(self.progressBar, 19, 0, 1, 2)
+        self.gridLayout.addWidget(self.progressBar, 20, 0, 1, 2)
 
         self.listView_3 = QListView(self.gridLayoutWidget)
         self.listView_3.setObjectName(u"listView_3")
 
-        self.gridLayout.addWidget(self.listView_3, 20, 0, 1, 2)
+        self.gridLayout.addWidget(self.listView_3, 21, 0, 1, 2)
 
 
         self.retranslateUi(SpeederTubeGUI)
@@ -159,7 +164,9 @@ class Ui_SpeederTubeGUI(object):
         self.label_2.setText(QCoreApplication.translate("SpeederTubeGUI", u"Or select the YouTube playlist you want to migrate to:", None))
         self.label_6.setText(QCoreApplication.translate("SpeederTubeGUI", u"After you've selected the Spotify and YouTube playlists, click the button to start migrating:", None))
         self.pushButton.setText(QCoreApplication.translate("SpeederTubeGUI", u"Start Migrating", None))
+        self.pushButton_2.setText(QCoreApplication.translate("SpeederTubeGUI", u"Stop Migrating", None))
         self.label_4.setText(QCoreApplication.translate("SpeederTubeGUI", u"Song(s) successfully migrated:", None))
         self.label_5.setText(QCoreApplication.translate("SpeederTubeGUI", u"Song(s) failed to migrate:", None))
         self.label_7.setText(QCoreApplication.translate("SpeederTubeGUI", u"Progress:", None))
     # retranslateUi
+

@@ -1,7 +1,7 @@
 import time
 import random
 from googleapiclient.discovery import build
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import Qt, QThread, Signal, QMutex, QWaitCondition
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from ui.ui_form import Ui_SpeederTubeGUI
@@ -37,9 +37,25 @@ class YouTubeMigrator(QThread):
         self.youtube_playlist_id = youtube_playlist_id
         self.youtube_token = youtube_token
 
+        self.paused = False
+        self.stopped = False
+        self.mutex = QMutex()
+        self.pause_condition = QWaitCondition()
+
     def run(self):
         youtube_service = build('youtube', 'v3', credentials=self.youtube_token)
+
         for track in self.spotify_playlist_tracks:
+            self.mutex.lock()
+            if self.stopped:
+                self.mutex.unlock()
+                break
+
+            while self.paused:
+                self.pause_condition.wait(self.mutex)
+
+            self.mutex.unlock()
+
             song_name = track['track']['name']
             artist_name = track['track']['artists'][0]['name']
             search_result = self.search_youtube(youtube_service, song_name, artist_name)
@@ -89,6 +105,24 @@ class YouTubeMigrator(QThread):
                 else:
                     raise e
 
+    def pause(self):
+        self.mutex.lock()
+        self.paused = True
+        self.mutex.unlock()
+
+    def resume(self):
+        self.mutex.lock()
+        self.paused = False
+        self.pause_condition.wakeAll()
+        self.mutex.unlock()
+
+    def stop(self):
+        self.mutex.lock()
+        self.stopped = True
+        self.paused = False
+        self.pause_condition.wakeAll()
+        self.mutex.unlock()
+
 class SpeederTubeGUI(QWidget):
     def __init__(self):
         super().__init__()
@@ -118,6 +152,10 @@ class SpeederTubeGUI(QWidget):
         self.fetch_youtube_playlists()
 
         self.ui.pushButton.clicked.connect(self.start_migration)
+        self.ui.pushButton_2.clicked.connect(self.stop_migration)
+
+        self.migration_in_progress = False
+        self.migration_paused = False
 
     def fetch_spotify_playlists(self):
         self.sp_crawler = SpotifyMigrator(self.spotify_token)
@@ -174,42 +212,63 @@ class SpeederTubeGUI(QWidget):
         return playlist_response['id']
 
     def start_migration(self):
-        spotify_playlist_index = self.ui.comboBox.currentIndex()
-        selected_spotify_playlist_id = self.ui.comboBox.itemData(spotify_playlist_index)
-        youtube_playlist_name = self.ui.lineEdit.text()
-        youtube_playlist_id = self.ui.comboBox_2.currentData()
-
-        if not selected_spotify_playlist_id:
-            self.update_general_progress("Please select a Spotify playlist.")
-            return
-
-        youtube_service = build('youtube', 'v3', credentials=self.youtube_token)
-
-        if youtube_playlist_name:
-            youtube_playlist_id = self.create_new_youtube_playlist(youtube_service, youtube_playlist_name)
-            self.update_general_progress(f"Created a new YouTube playlist '{youtube_playlist_name}'")
+        if self.migration_in_progress and self.migration_paused:
+            self.yt_crawler.resume()
+            self.update_general_progress("Resuming migration...")
+            self.migration_paused = False
         else:
-            if not youtube_playlist_id:
-                self.update_general_progress("Please select or create a YouTube playlist.")
+            spotify_playlist_index = self.ui.comboBox.currentIndex()
+            selected_spotify_playlist_id = self.ui.comboBox.itemData(spotify_playlist_index)
+            youtube_playlist_name = self.ui.lineEdit.text()
+            youtube_playlist_id = self.ui.comboBox_2.currentData()
+
+            if not selected_spotify_playlist_id:
+                self.update_general_progress("Please select a Spotify playlist.")
                 return
 
-        self.update_general_progress(f"Starting migration to YouTube playlist '{youtube_playlist_name or self.ui.comboBox_2.currentText()}'")
-        spotify_tracks = self.spotify_token.playlist_tracks(selected_spotify_playlist_id)['items']
+            youtube_service = build('youtube', 'v3', credentials=self.youtube_token)
 
-        self.total_songs = len(spotify_tracks)
-        self.processed_songs = 0
-        self.ui.progressBar.setValue(0)
+            if youtube_playlist_name:
+                youtube_playlist_id = self.create_new_youtube_playlist(youtube_service, youtube_playlist_name)
+                self.update_general_progress(f"Created a new YouTube playlist '{youtube_playlist_name}'")
+            else:
+                if not youtube_playlist_id:
+                    self.update_general_progress("Please select or create a YouTube playlist.")
+                    return
 
-        if self.total_songs == 0:
-            self.update_general_progress("No songs found in the selected Spotify playlist.")
+            self.update_general_progress(f"Starting migration to YouTube playlist '{youtube_playlist_name or self.ui.comboBox_2.currentText()}'")
+            spotify_tracks = self.spotify_token.playlist_tracks(selected_spotify_playlist_id)['items']
+
+            self.total_songs = len(spotify_tracks)
+            self.processed_songs = 0
+            self.ui.progressBar.setValue(0)
+
+            if self.total_songs == 0:
+                self.update_general_progress("No songs found in the selected Spotify playlist.")
+                return
+
+            self.yt_crawler = YouTubeMigrator(spotify_tracks, youtube_playlist_id, self.youtube_token)
+
+            self.yt_crawler.song_migrated_success.connect(self.update_success_progress)
+            self.yt_crawler.song_migrated_failed.connect(self.update_failed_progress)
+
+            self.yt_crawler.start()
+
+            self.migration_in_progress = True
+            self.migration_paused = False
+
+    def stop_migration(self):
+        if not self.migration_in_progress:
+            self.update_general_progress("Migration has not started yet.")
             return
 
-        self.yt_crawler = YouTubeMigrator(spotify_tracks, youtube_playlist_id, self.youtube_token)
+        if self.migration_paused:
+            self.update_general_progress("Migration is already paused.")
+            return
 
-        self.yt_crawler.song_migrated_success.connect(self.update_success_progress)
-        self.yt_crawler.song_migrated_failed.connect(self.update_failed_progress)
-
-        self.yt_crawler.start()
+        self.yt_crawler.pause()
+        self.update_general_progress("Pausing migration...")
+        self.migration_paused = True
 
     def add_non_editable_item(self, model, text):
         item = QStandardItem(text)
